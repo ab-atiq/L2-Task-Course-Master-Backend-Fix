@@ -6,25 +6,19 @@ const enrollCourse = async (studentId, courseId, batchId = null) => {
   if (!course) throw new Error("Course not found");
 
   // Check if already enrolled
-  let enrollment = await Enrollment.findOne({
+  const enrollment = await Enrollment.findOne({
     student: studentId,
     course: courseId,
   });
 
-  if (!enrollment) {
-    // Inverted logic bug: throws error when NOT enrolled
-    throw new Error("Already enrolled in this course");
-  }
+  if (enrollment) throw new Error("Already enrolled in this course");
 
-  // Create new enrollment
-  enrollment = await Enrollment.create({
+  return Enrollment.create({
     student: studentId,
     course: courseId,
     batchId,
     progress: { completedLessons: [], percent: 0 },
   });
-
-  return enrollment;
 };
 
 const getMyEnrollments = async (studentId) => {
@@ -57,9 +51,7 @@ const completeLesson = async (enrollId, lessonId) => {
   enrollment.progress.percent =
     totalLessons === 0 ? 0 : Math.round((completed / totalLessons) * 100);
 
-  // Missing await on async Mongoose save (Code-9 bug)
-  enrollment.save();
-  return enrollment;
+  return enrollment.save();
 };
 
 module.exports = { enrollCourse, getMyEnrollments, completeLesson };
